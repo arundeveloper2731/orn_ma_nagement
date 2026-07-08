@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/matching")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins="https://ornmanagement.netlify.app")
 public class MatchingController {
 
     @Autowired

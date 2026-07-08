@@ -19,7 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/api/reports")
-@CrossOrigin("*")
+@CrossOrigin(origins="https://ornmanagement.netlify.app")
 public class ReportController {
     @Autowired
     private ReportService reportService;

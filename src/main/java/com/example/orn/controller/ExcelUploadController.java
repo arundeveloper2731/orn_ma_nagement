@@ -14,7 +14,7 @@ import com.example.orn.service.ExcelUploadService;
 
 @RestController
 @RequestMapping("/api/excel")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins="https://ornmanagement.netlify.app")
 public class ExcelUploadController {
     private final ExcelUploadService excelUploadService;
 

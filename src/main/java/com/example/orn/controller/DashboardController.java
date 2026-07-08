@@ -11,7 +11,7 @@ import com.example.orn.service.DashboardService;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins ="*")
+@CrossOrigin(origins="https://ornmanagement.netlify.app")
 public class DashboardController 
 {
     @Autowired

@@ -3,7 +3,6 @@ package com.example.orn.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.orn.model.Expense;
@@ -11,7 +10,7 @@ import com.example.orn.service.ExpenseService;
 
 @RestController
 @RequestMapping("/api/expenses")
-@CrossOrigin(origins ="*")
+@CrossOrigin(origins="https://ornmanagement.netlify.app")
 public class ExpenseController {
     @Autowired
     private ExpenseService expenseService;

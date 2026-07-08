@@ -3,7 +3,6 @@ package com.example.orn.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -25,32 +24,25 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // Pure REST API security: no view-based login page, no server-side
-    // redirects. The separated frontend calls /login and /logout via
-    // fetch() and gets back plain HTTP status codes to act on.
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http){
 
         http.csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/login", "/signup", "/register").permitAll()
+                .requestMatchers("/","/login","/signup","/register",
+                "/css/**","/javascript/**").permitAll()
                 .anyRequest().authenticated()
             ).formLogin(form -> form
+                    .loginPage("/login")
                     .loginProcessingUrl("/login")
                     .usernameParameter("username")
                     .passwordParameter("password")
-                    .successHandler((request, response, authentication) -> {
-                        response.setStatus(HttpStatus.OK.value());
-                    })
-                    .failureHandler((request, response, exception) -> {
-                        response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                    })
+                    .defaultSuccessUrl("/index", true)
+                    .failureUrl("/login?error")
                     .permitAll()
             ).logout(logout -> logout
                 .logoutUrl("/logout")
-                .logoutSuccessHandler((request, response, authentication) -> {
-                    response.setStatus(HttpStatus.OK.value());
-                })
+                .logoutSuccessUrl("/login?logout")
                 .invalidateHttpSession(true).permitAll()
             );
 
