@@ -10,7 +10,7 @@ import com.example.orn.service.ExpenseService;
 
 @RestController
 @RequestMapping("/api/expenses")
-@CrossOrigin(origins="https://ornmanagement.netlify.app")
+@CrossOrigin(origins="*")
 public class ExpenseController {
     @Autowired
     private ExpenseService expenseService;

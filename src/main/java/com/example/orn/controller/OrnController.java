@@ -21,7 +21,7 @@ import com.example.orn.service.OrnService;
 
 @RestController
 @RequestMapping("/api/orn")
-@CrossOrigin(origins="https://ornmanagement.netlify.app")
+@CrossOrigin(origins="*")
 
 public class OrnController 
 {
