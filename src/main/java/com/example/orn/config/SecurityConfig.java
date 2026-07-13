@@ -11,6 +11,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import com.example.orn.service.CustomUserDetailsService;
+import org.springframework.security.config.Customizer;
 
 @Configuration
 @EnableWebSecurity
@@ -28,22 +29,10 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http){
 
         http.csrf(csrf -> csrf.disable())
+        .cors(Customizer.withDefaults())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/","/login","/signup","/register",
-                "/css/**","/javascript/**").permitAll()
+                .requestMatchers("/**").permitAll()
                 .anyRequest().authenticated()
-            ).formLogin(form -> form
-                    .loginPage("/login")
-                    .loginProcessingUrl("/login")
-                    .usernameParameter("username")
-                    .passwordParameter("password")
-                    .defaultSuccessUrl("/index", true)
-                    .failureUrl("/login?error")
-                    .permitAll()
-            ).logout(logout -> logout
-                .logoutUrl("/logout")
-                .logoutSuccessUrl("/login?logout")
-                .invalidateHttpSession(true).permitAll()
             );
 
             return http.build();
