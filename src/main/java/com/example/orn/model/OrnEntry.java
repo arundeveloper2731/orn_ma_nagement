@@ -26,6 +26,9 @@ public class OrnEntry {
     private LocalDate transactionDate;
     private String status;
 
+    @Column(name = "created_by")
+    private String createdBy;
+
     
     
     public OrnEntry() {
@@ -93,6 +96,14 @@ public class OrnEntry {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
     }
 
     

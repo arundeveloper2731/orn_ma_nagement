@@ -13,6 +13,11 @@ public class OrnResponseDTO
     private LocalDate transactionDate;
     private String status;
 
+    // Exposed so the frontend can decide whether to show Edit/Delete for
+    // this row. This is read-only output — never trusted as input, since
+    // OrnRequestDTO (the incoming DTO) has no such field.
+    private String createdBy;
+
     private String message;
 
 
@@ -69,6 +74,12 @@ public class OrnResponseDTO
     }
     public void setStatus(String status) {
         this.status = status;
+    }
+    public String getCreatedBy() {
+        return createdBy;
+    }
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
     }
 
     

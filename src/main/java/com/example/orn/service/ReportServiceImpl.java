@@ -22,6 +22,7 @@ import com.example.orn.model.OrnEntry;
 import com.example.orn.repository.ExcelUploadRepository;
 import com.example.orn.repository.ExpenseRepository;
 import com.example.orn.repository.OrnRepository;
+import com.example.orn.security.SecurityUtils;
 
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -41,13 +42,24 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public ReportSummary getSummary() {
 
-        Set<String> excelOrnSet = excelUploadRepository.findAll()
+        boolean isAdmin = SecurityUtils.isCurrentUserAdmin();
+        String currentUser = SecurityUtils.getCurrentUsername();
+
+        List<ExcelUpload> excelRows = isAdmin
+                ? excelUploadRepository.findAll()
+                : excelUploadRepository.findByCreatedBy(currentUser);
+
+        List<OrnEntry> manualRows = isAdmin
+                ? ornRepository.findAll()
+                : ornRepository.findByCreatedBy(currentUser);
+
+        Set<String> excelOrnSet = excelRows
                 .stream()
                 .filter(e -> e.getOrn() != null && !e.getOrn().trim().isEmpty())
                 .map(e -> e.getOrn().trim().toUpperCase())
                 .collect(Collectors.toSet());
 
-        Map<String, Long> excelOrnCount = excelUploadRepository.findAll()
+        Map<String, Long> excelOrnCount = excelRows
                 .stream()
                 .filter(e -> e.getOrn() != null && !e.getOrn().trim().isEmpty())
                 .collect(Collectors.groupingBy(
@@ -55,7 +67,7 @@ public class ReportServiceImpl implements ReportService {
                         Collectors.counting()
                 ));
 
-        Map<String, Long> manualOrnCount = ornRepository.findAll()
+        Map<String, Long> manualOrnCount = manualRows
                 .stream()
                 .filter(o -> o.getOrnNo() != null && !o.getOrnNo().trim().isEmpty())
                 .collect(Collectors.groupingBy(
@@ -63,12 +75,12 @@ public class ReportServiceImpl implements ReportService {
                         Collectors.counting()
                 ));
 
-        long totalOrn   = ornRepository.count();
+        long totalOrn   = manualRows.size();
         long matched    = 0;
         long missingInExcel = 0;
         long duplicate  = 0;
 
-        for (OrnEntry orn : ornRepository.findAll()) {
+        for (OrnEntry orn : manualRows) {
 
             if (orn.getOrnNo() == null || orn.getOrnNo().trim().isEmpty()) continue;
 
@@ -84,7 +96,7 @@ public class ReportServiceImpl implements ReportService {
             }
         }
 
-        long missingInManual = excelUploadRepository.findAll()
+        long missingInManual = excelRows
                 .stream()
                 .filter(e -> e.getOrn() != null && !e.getOrn().trim().isEmpty())
                 .map(e -> e.getOrn().trim().toUpperCase())
@@ -92,7 +104,9 @@ public class ReportServiceImpl implements ReportService {
                 .distinct()
                 .count();
 
-        double totalExpense = expenseRepository.findAll()
+        double totalExpense = (isAdmin
+                ? expenseRepository.findAll()
+                : expenseRepository.findByCreatedBy(currentUser))
                 .stream()
                 .mapToDouble(e -> e.getAmount())
                 .sum();
@@ -113,13 +127,24 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public List<ReportDTO> getReports(LocalDate from, LocalDate to, String status) {
 
-        Set<String> excelOrnSet = excelUploadRepository.findAll()
+        boolean isAdmin = SecurityUtils.isCurrentUserAdmin();
+        String currentUser = SecurityUtils.getCurrentUsername();
+
+        List<ExcelUpload> excelRows = isAdmin
+                ? excelUploadRepository.findAll()
+                : excelUploadRepository.findByCreatedBy(currentUser);
+
+        List<OrnEntry> allManualRows = isAdmin
+                ? ornRepository.findAll()
+                : ornRepository.findByCreatedBy(currentUser);
+
+        Set<String> excelOrnSet = excelRows
                 .stream()
                 .filter(e -> e.getOrn() != null && !e.getOrn().trim().isEmpty())
                 .map(e -> e.getOrn().trim().toUpperCase())
                 .collect(Collectors.toSet());
 
-        Map<String, Long> excelOrnCount = excelUploadRepository.findAll()
+        Map<String, Long> excelOrnCount = excelRows
                 .stream()
                 .filter(e -> e.getOrn() != null && !e.getOrn().trim().isEmpty())
                 .collect(Collectors.groupingBy(
@@ -127,7 +152,7 @@ public class ReportServiceImpl implements ReportService {
                         Collectors.counting()
                 ));
 
-        Map<String, Long> manualOrnCount = ornRepository.findAll()
+        Map<String, Long> manualOrnCount = allManualRows
                 .stream()
                 .filter(o -> o.getOrnNo() != null && !o.getOrnNo().trim().isEmpty())
                 .collect(Collectors.groupingBy(
@@ -136,7 +161,7 @@ public class ReportServiceImpl implements ReportService {
                 ));
 
         Map<String, Double> expenseMap = new HashMap<>();
-        expenseRepository.findAll().forEach(exp -> {
+        (isAdmin ? expenseRepository.findAll() : expenseRepository.findByCreatedBy(currentUser)).forEach(exp -> {
             if (exp.getOrn() != null) {
                 String k = exp.getOrn().trim().toUpperCase();
                 expenseMap.merge(k, exp.getAmount(), Double::sum);
@@ -146,9 +171,11 @@ public class ReportServiceImpl implements ReportService {
         List<OrnEntry> entries;
 
         if (from != null && to != null) {
-            entries = ornRepository.findByTransactionDateBetween(from, to);
+            entries = isAdmin
+                    ? ornRepository.findByTransactionDateBetween(from, to)
+                    : ornRepository.findByCreatedByAndTransactionDateBetween(currentUser, from, to);
         } else {
-            entries = ornRepository.findAll();
+            entries = allManualRows;
         }
 
         List<ReportDTO> list = new ArrayList<>();
@@ -190,7 +217,7 @@ public class ReportServiceImpl implements ReportService {
 
             Set<String> addedExcelOnly = new HashSet<>();
 
-            for (ExcelUpload excel : excelUploadRepository.findAll()) {
+            for (ExcelUpload excel : excelRows) {
 
                 if (excel.getOrn() == null || excel.getOrn().trim().isEmpty()) continue;
 

@@ -19,6 +19,9 @@ public class Expense
     @Column(length = 1000)
     private String description;
 
+    @Column(name = "created_by")
+    private String createdBy;
+
     public Expense(){
 
     }
@@ -66,6 +69,14 @@ public class Expense
     }
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
     }
 
     

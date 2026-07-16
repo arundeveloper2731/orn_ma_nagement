@@ -123,6 +123,9 @@ public class ExcelUpload {
     @Column(name = "file_name")
     private String fileName;
 
+    @Column(name = "created_by")
+    private String createdBy;
+
     public ExcelUpload() {
         this.uploadedAt = LocalDateTime.now();
     }
@@ -460,5 +463,13 @@ public class ExcelUpload {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
     }
 }

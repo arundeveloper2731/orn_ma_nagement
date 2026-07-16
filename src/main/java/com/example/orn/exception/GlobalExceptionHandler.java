@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -17,6 +18,17 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    // Added for Phase 2 (Role-Based Authorization): without this explicit
+    // handler, AccessDeniedException thrown by @PreAuthorize checks would be
+    // swallowed by the generic Exception handler below and returned as a
+    // 500 instead of the correct 403 Forbidden.
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<String> handleAccessDenied(AccessDeniedException e) {
+        log.warn("Access denied: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body("You do not have permission to access this resource");
+    }
 
     @ExceptionHandler(IncorrectResultSizeDataAccessException.class)
     public ResponseEntity<String> handleDuplicateResult(IncorrectResultSizeDataAccessException e) {

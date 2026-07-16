@@ -6,6 +6,7 @@ import com.example.orn.model.ExcelUpload;
 import com.example.orn.model.OrnEntry;
 import com.example.orn.repository.ExcelUploadRepository;
 import com.example.orn.repository.OrnRepository;
+import com.example.orn.security.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -44,10 +45,21 @@ public class MatchingServiceImpl implements MatchingService {
     @Override
     public List<MatchingResultDTO> runMatching(String manualOrn, String fileName) {
 
-        List<OrnEntry>    manualList = ornRepository.findAll();
-        List<ExcelUpload> excelList  = (fileName == null || fileName.isBlank() || fileName.equalsIgnoreCase("all"))
-                ? excelUploadRepository.findAll()
-                : excelUploadRepository.findByFileName(fileName);
+        boolean isAdmin = SecurityUtils.isCurrentUserAdmin();
+        String currentUser = SecurityUtils.getCurrentUsername();
+
+        List<OrnEntry> manualList = isAdmin
+                ? ornRepository.findAll()
+                : ornRepository.findByCreatedBy(currentUser);
+
+        List<ExcelUpload> excelList;
+        if (fileName == null || fileName.isBlank() || fileName.equalsIgnoreCase("all")) {
+            excelList = isAdmin ? excelUploadRepository.findAll() : excelUploadRepository.findByCreatedBy(currentUser);
+        } else {
+            excelList = isAdmin
+                    ? excelUploadRepository.findByFileName(fileName)
+                    : excelUploadRepository.findByFileNameAndCreatedBy(fileName, currentUser);
+        }
 
         // ---- Pass 1: build Excel lookup (normalised-ORN -> first record) + counts ----
         Map<String, ExcelUpload> excelFirstMap = new HashMap<>();
@@ -172,8 +184,20 @@ public class MatchingServiceImpl implements MatchingService {
 
         ComparisonDTO dto = new ComparisonDTO();
 
+        boolean isAdmin = SecurityUtils.isCurrentUserAdmin();
+        String currentUser = SecurityUtils.getCurrentUsername();
+
         Optional<OrnEntry> manualOpt = ornRepository.findByOrnNo(orn);
-        List<ExcelUpload> excelList = excelUploadRepository.findAllByOrn(orn);
+        if (manualOpt.isPresent() && !isAdmin) {
+            String owner = manualOpt.get().getCreatedBy();
+            if (owner == null || !owner.equals(currentUser)) {
+                manualOpt = Optional.empty();
+            }
+        }
+
+        List<ExcelUpload> excelList = isAdmin
+                ? excelUploadRepository.findAllByOrn(orn)
+                : excelUploadRepository.findAllByOrnAndCreatedBy(orn, currentUser);
 
         if (fileName != null && !fileName.isBlank() && !fileName.equalsIgnoreCase("all")) {
             excelList = excelList.stream()

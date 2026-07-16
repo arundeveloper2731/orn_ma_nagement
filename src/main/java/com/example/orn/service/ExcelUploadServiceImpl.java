@@ -16,6 +16,7 @@ import org.apache.poi.ss.usermodel.*;
 
 import com.example.orn.model.ExcelUpload;
 import com.example.orn.repository.ExcelUploadRepository;
+import com.example.orn.security.SecurityUtils;
 
 import jakarta.transaction.Transactional;
 
@@ -62,7 +63,9 @@ public class ExcelUploadServiceImpl implements ExcelUploadService {
     @Override
     public List<Map<String, Object>> getUploadedFileSummaries() {
 
-        List<ExcelUpload> all = excelUploadRepository.findAll();
+        List<ExcelUpload> all = SecurityUtils.isCurrentUserAdmin()
+                ? excelUploadRepository.findAll()
+                : excelUploadRepository.findByCreatedBy(SecurityUtils.getCurrentUsername());
 
         Map<String, List<ExcelUpload>> grouped = all.stream()
                 .filter(e -> e.getFileName() != null)
@@ -101,12 +104,18 @@ public class ExcelUploadServiceImpl implements ExcelUploadService {
 
     @Override
     public List<ExcelUpload> getByFileName(String fileName) {
-        return excelUploadRepository.findByFileName(fileName);
+        return SecurityUtils.isCurrentUserAdmin()
+                ? excelUploadRepository.findByFileName(fileName)
+                : excelUploadRepository.findByFileNameAndCreatedBy(fileName, SecurityUtils.getCurrentUsername());
     }
 
     @Override
     public void deleteByFileName(String fileName) {
-        excelUploadRepository.deleteByFileName(fileName);
+        if (SecurityUtils.isCurrentUserAdmin()) {
+            excelUploadRepository.deleteByFileName(fileName);
+        } else {
+            excelUploadRepository.deleteByFileNameAndCreatedBy(fileName, SecurityUtils.getCurrentUsername());
+        }
     }
 
    
@@ -126,6 +135,7 @@ public class ExcelUploadServiceImpl implements ExcelUploadService {
 
                 ExcelUpload excel = new ExcelUpload();
                 excel.setFileName(fileName);
+                excel.setCreatedBy(SecurityUtils.getCurrentUsername());
 
                 
 
@@ -271,6 +281,7 @@ public class ExcelUploadServiceImpl implements ExcelUploadService {
 
                 ExcelUpload excel = new ExcelUpload();
                 excel.setFileName(fileName);
+                excel.setCreatedBy(SecurityUtils.getCurrentUsername());
 
                 excel.setPartnerRoleType(getValue(data, 0));
                 excel.setSchemeName(getValue(data, 1));
@@ -440,6 +451,13 @@ public class ExcelUploadServiceImpl implements ExcelUploadService {
             ExcelUpload existing = excelUploadRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Excel record not found: " + id));
 
+            if (!SecurityUtils.isCurrentUserAdmin()) {
+                String currentUser = SecurityUtils.getCurrentUsername();
+                if (existing.getCreatedBy() == null || !existing.getCreatedBy().equals(currentUser)) {
+                    throw new RuntimeException("Excel record not found: " + id);
+                }
+            }
+
             existing.setPartnerRoleType(updated.getPartnerRoleType());
             existing.setSchemeName(updated.getSchemeName());
             existing.setSchemeNumber(updated.getSchemeNumber());
@@ -488,13 +506,17 @@ public class ExcelUploadServiceImpl implements ExcelUploadService {
             @Override
         public List<ExcelUpload> getAllUploadedData() {
 
-            return excelUploadRepository.findAll();
+            return SecurityUtils.isCurrentUserAdmin()
+                    ? excelUploadRepository.findAll()
+                    : excelUploadRepository.findByCreatedBy(SecurityUtils.getCurrentUsername());
 
         }
 
            @Override
             public ExcelUpload getByOrn(String orn) {
-                List<ExcelUpload> list = excelUploadRepository.findAllByOrn(orn);
+                List<ExcelUpload> list = SecurityUtils.isCurrentUserAdmin()
+                        ? excelUploadRepository.findAllByOrn(orn)
+                        : excelUploadRepository.findAllByOrnAndCreatedBy(orn, SecurityUtils.getCurrentUsername());
                 return list.isEmpty() ? null : list.get(0);
             }
 

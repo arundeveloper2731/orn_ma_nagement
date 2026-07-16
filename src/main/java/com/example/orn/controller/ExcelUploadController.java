@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,6 +16,7 @@ import com.example.orn.service.ExcelUploadService;
 @RestController
 @RequestMapping("/api/excel")
 @CrossOrigin(origins="*")
+@PreAuthorize("hasAnyRole('ADMIN','USER')")
 public class ExcelUploadController {
     private final ExcelUploadService excelUploadService;
 
@@ -59,6 +61,7 @@ public class ExcelUploadController {
     }
 
     @DeleteMapping("/delete/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteById(@PathVariable Long id) {
 
         excelUploadService.deleteById(id);
@@ -90,6 +93,7 @@ public class ExcelUploadController {
     }
 
     @DeleteMapping("/delete-file")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteByFileName(@RequestParam String fileName) {
         excelUploadService.deleteByFileName(fileName);
         return ResponseEntity.ok("All records for file '" + fileName + "' deleted successfully.");

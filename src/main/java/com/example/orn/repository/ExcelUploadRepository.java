@@ -28,4 +28,15 @@ public interface ExcelUploadRepository extends JpaRepository<ExcelUpload, Long> 
 
     @Transactional
     void deleteByFileName(String fileName);
+
+    // ---- Added for per-user data isolation ----
+    List<ExcelUpload> findByCreatedBy(String createdBy);
+
+    List<ExcelUpload> findByFileNameAndCreatedBy(String fileName, String createdBy);
+
+    @Query("SELECT e FROM ExcelUpload e WHERE TRIM(UPPER(e.orn)) = TRIM(UPPER(:orn)) AND e.createdBy = :createdBy")
+    List<ExcelUpload> findAllByOrnAndCreatedBy(@Param("orn") String orn, @Param("createdBy") String createdBy);
+
+    @Transactional
+    void deleteByFileNameAndCreatedBy(String fileName, String createdBy);
 }

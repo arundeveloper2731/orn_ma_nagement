@@ -3,6 +3,7 @@ package com.example.orn.controller;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,7 +23,7 @@ import com.example.orn.service.OrnService;
 @RestController
 @RequestMapping("/api/orn")
 @CrossOrigin(origins="*")
-
+@PreAuthorize("hasAnyRole('ADMIN','USER')")
 public class OrnController 
 {
     private final OrnService service;
@@ -63,6 +64,7 @@ public class OrnController
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','USER')")
     public void delete(@PathVariable Long id){
 
     service.delete(id);

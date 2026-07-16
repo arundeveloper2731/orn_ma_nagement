@@ -11,8 +11,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.orn.dto.AuthResponse;
 import com.example.orn.entity.LoginRequest;
 import com.example.orn.model.User;
+import com.example.orn.security.JwtUtil;
 import com.example.orn.service.UserService;
 
 @RestController
@@ -26,6 +28,9 @@ public class AuthController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
@@ -44,7 +49,10 @@ public class AuthController {
                         .body("Invalid password");
             }
 
-            return ResponseEntity.ok("Login Successful");
+            String role = (user.getRole() == null || user.getRole().isBlank()) ? "USER" : user.getRole();
+            String token = jwtUtil.generateToken(user.getUsername(), role);
+
+            return ResponseEntity.ok(new AuthResponse("Login Successful", token, user.getUsername(), role));
 
         } catch (Exception e) {
             log.error("Login failed for username={}", request.getUsername(), e);

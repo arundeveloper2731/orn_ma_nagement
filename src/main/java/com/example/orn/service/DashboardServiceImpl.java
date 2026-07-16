@@ -15,6 +15,7 @@ import com.example.orn.model.OrnEntry;
 import com.example.orn.repository.ExcelUploadRepository;
 import com.example.orn.repository.ExpenseRepository;
 import com.example.orn.repository.OrnRepository;
+import com.example.orn.security.SecurityUtils;
 import com.example.orn.util.OrnMatchUtils;
 
 @Service
@@ -34,10 +35,14 @@ public class DashboardServiceImpl implements DashboardService {
 
         DashboardDTO dto = new DashboardDTO();
 
-        dto.setTotalORN(ornRepo.count());
-        dto.setExcelRecords(excelrepo.count());
+        boolean isAdmin = SecurityUtils.isCurrentUserAdmin();
+        String currentUser = SecurityUtils.getCurrentUsername();
 
-        List<ExcelUpload> allExcel = excelrepo.findAll();
+        List<ExcelUpload> allExcel = isAdmin ? excelrepo.findAll() : excelrepo.findByCreatedBy(currentUser);
+        List<OrnEntry> allManual = isAdmin ? ornRepo.findAll() : ornRepo.findByCreatedBy(currentUser);
+
+        dto.setTotalORN((long) allManual.size());
+        dto.setExcelRecords((long) allExcel.size());
 
         // ---- Excel side: normalised-ORN -> occurrence count (HashMap, single pass) ----
         Map<String, Long> excelOrnCount = allExcel
@@ -51,8 +56,6 @@ public class DashboardServiceImpl implements DashboardService {
         Set<String> excelOrnSet = excelOrnCount.keySet();
 
         // ---- Manual side: normalised-ORN -> occurrence count (HashMap, single pass) ----
-        List<OrnEntry> allManual = ornRepo.findAll();
-
         Map<String, Long> manualOrnCount = allManual
                 .stream()
                 .filter(o -> o.getOrnNo() != null && !o.getOrnNo().trim().isEmpty())
@@ -98,10 +101,13 @@ public class DashboardServiceImpl implements DashboardService {
         dto.setDuplicateCount(duplicateList.size());
         dto.setUnmatchedCount(unmatchedList.size());
 
-        dto.setTotalExpense(expenseRepo.getTotalExpense());
+        dto.setTotalExpense(isAdmin
+                ? expenseRepo.getTotalExpense()
+                : expenseRepo.getTotalExpenseByCreatedBy(currentUser));
 
-        List<RecentOrnDTO> recentList = ornRepo
-                .findTop5ByOrderByTransactionDateDesc()
+        List<RecentOrnDTO> recentList = (isAdmin
+                ? ornRepo.findTop5ByOrderByTransactionDateDesc()
+                : ornRepo.findTop5ByCreatedByOrderByTransactionDateDesc(currentUser))
                 .stream()
                 .map(o -> {
                     String key = o.getOrnNo() == null ? ""
